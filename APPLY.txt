@@ -1,0 +1,32 @@
+NEWS BOT v1.2 — Telegram LIVE fix
+
+Replace:
+  newsbot/telegram/collector.py
+
+with the collector.py from this package.
+
+Why:
+1. Resolves every configured Telegram source to a concrete entity/peer ID.
+2. Registers NewMessage against resolved entities instead of raw usernames.
+3. Matches live updates by event.chat_id, with username fallback.
+4. Adds a 15-second polling watchdog for channels where Telegram does not
+   deliver NewMessage updates to the account.
+5. Keeps backfill separate from LIVE and preserves the 3-argument callback
+   used by the current retention/live pipeline: callback(db_id, source,
+   is_backfill).
+6. Emits explicit LIVE/HEARTBEAT counters so the next test is unambiguous.
+
+After copying the file:
+  python -m py_compile newsbot/telegram/collector.py
+  python main.py
+
+Expected startup lines:
+  Telegram source resolved username=... id=...
+  Telegram LIVE monitor armed sources=12 ids=[...]
+
+After a new Telegram post, either:
+  Telegram LIVE received source=... message_id=... queued=1
+or, if Telegram did not send the event:
+  Telegram LIVE poll source=... message_id=... queued=1
+
+Do not copy any .env or runtime database from this package.
