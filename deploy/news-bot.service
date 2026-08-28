@@ -1,0 +1,15 @@
+[Unit]
+Description=ИнфоТочка News Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/news-bot-v1
+ExecStart=/opt/news-bot-v1/.venv/bin/python /opt/news-bot-v1/main.py
+Restart=on-failure
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
