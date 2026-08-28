@@ -24,7 +24,7 @@ class Settings:
     groq_key:str; groq_model:str; groq_max_tokens:int; groq_temperature:float
     mistral_key:str; mistral_model:str; mistral_max_tokens:int; mistral_temperature:float
     llm_timeout:int; llm_min_interval_seconds:float; groq_cooldown_seconds:float; db_file:str; source_config:str; auto_publish:bool
-    backfill_limit:int; poll_interval:int; dedup_hours:int; similarity_threshold:float
+    backfill_limit:int; dedup_hours:int; similarity_threshold:float
     min_sources_high_conf:int; max_post_length:int; retention_days:int; log_level:str
     min_priority_publish:int; min_confidence_publish:float
     @property
@@ -44,7 +44,7 @@ def load_settings():
         groq_key=env('GROQ_API_KEY'), groq_model=env('GROQ_MODEL','qwen/qwen3-27b'), groq_max_tokens=env_int('GROQ_MAX_TOKENS',1800), groq_temperature=env_float('GROQ_TEMPERATURE',.35),
         mistral_key=env('MISTRAL_API_KEY'), mistral_model=env('MISTRAL_MODEL','mistral-small-latest'), mistral_max_tokens=env_int('MISTRAL_MAX_TOKENS',1800), mistral_temperature=env_float('MISTRAL_TEMPERATURE',.35),
         llm_timeout=env_int('LLM_TIMEOUT',90), llm_min_interval_seconds=env_float('LLM_MIN_INTERVAL_SECONDS',2.0), groq_cooldown_seconds=env_float('GROQ_COOLDOWN_SECONDS',30.0), db_file=env('DB_FILE','runtime/news.db'), source_config=env('SOURCE_CONFIG','sources.json'),
-        auto_publish=env('AUTO_PUBLISH','0')=='1', backfill_limit=env_int('BACKFILL_LIMIT',100), poll_interval=env_int('POLL_INTERVAL',5), dedup_hours=env_int('DEDUP_HOURS',36), similarity_threshold=env_float('SIMILARITY_THRESHOLD',.86),
+        auto_publish=env('AUTO_PUBLISH','0')=='1', backfill_limit=env_int('BACKFILL_LIMIT',100), dedup_hours=env_int('DEDUP_HOURS',36), similarity_threshold=env_float('SIMILARITY_THRESHOLD',.86),
         min_sources_high_conf=env_int('MIN_SOURCES_FOR_HIGH_CONFIDENCE',2), max_post_length=env_int('MAX_POST_LENGTH',3500), retention_days=env_int('RETENTION_DAYS',4), log_level=env('LOG_LEVEL','INFO'),
         min_priority_publish=env_int('MIN_PRIORITY_PUBLISH',70), min_confidence_publish=env_float('MIN_CONFIDENCE_PUBLISH',.82)
     )

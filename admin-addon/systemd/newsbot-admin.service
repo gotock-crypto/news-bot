@@ -1,0 +1,17 @@
+[Unit]
+Description=News Bot Admin Control Plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/news-bot-v1
+Environment=PYTHONPATH=/opt/news-bot-v1/admin-addon:/opt/news-bot-v1
+EnvironmentFile=/opt/news-bot-v1/.env
+EnvironmentFile=/opt/news-bot-v1/.env.admin
+ExecStart=/opt/news-bot-v1/.venv/bin/python -m newsbot_admin.main
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
