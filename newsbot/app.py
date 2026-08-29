@@ -121,16 +121,6 @@ class App:
                 data.get("reason", ""),
             )
 
-            if not backfill:
-                self.db.upsert_event_window(
-                    eid,
-                    data.get("title", ""),
-                    data.get("text", ""),
-                    data.get("category", "other"),
-                    source,
-                    self.s.event_resolver_hours,
-                )
-
             log.info(
                 "article ready event=%s priority=%s confidence=%s publish=%s backfill=%s",
                 eid,
@@ -144,6 +134,24 @@ class App:
                 log.info("publish SKIP event=%s reason=startup_backfill", eid)
             else:
                 await self.maybe_publish(eid, data)
+
+                # В окно попадают только реально опубликованные события.
+                # Непрошедшие priority/confidence материалы не должны блокировать
+                # более качественный источник того же события.
+                with self.db.conn() as c:
+                    published = c.execute(
+                        "SELECT status FROM events WHERE id=?",
+                        (eid,),
+                    ).fetchone()
+                if published and published["status"] == "published":
+                    self.db.upsert_event_window(
+                        eid,
+                        data.get("title", ""),
+                        data.get("text", ""),
+                        data.get("category", "other"),
+                        source,
+                        self.s.event_resolver_hours,
+                    )
 
         except Exception:
             log.exception("processing failed msg=%s", msg_id)
