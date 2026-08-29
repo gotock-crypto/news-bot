@@ -64,8 +64,6 @@ class App:
                 )
                 return
 
-            # Новый семантический слой работает только перед публикацией.
-            # Старый similarity/event clustering выше остаётся без изменений.
             if not backfill:
                 decision = await self.event_resolver.resolve(
                     data.get("title", ""),
@@ -104,7 +102,6 @@ class App:
                         )
                         return
 
-                    # UPDATE проходит через существующий event/UPDATE pipeline.
                     await self.process_event(matched_eid, allow_publish=True)
                     return
 
@@ -124,15 +121,15 @@ class App:
                 data.get("reason", ""),
             )
 
-            # Кандидат попадает во временное 3h-окно до фактической публикации.
-            self.db.upsert_event_window(
-                eid,
-                data.get("title", ""),
-                data.get("text", ""),
-                data.get("category", "other"),
-                source,
-                self.s.event_resolver_hours,
-            )
+            if not backfill:
+                self.db.upsert_event_window(
+                    eid,
+                    data.get("title", ""),
+                    data.get("text", ""),
+                    data.get("category", "other"),
+                    source,
+                    self.s.event_resolver_hours,
+                )
 
             log.info(
                 "article ready event=%s priority=%s confidence=%s publish=%s backfill=%s",
