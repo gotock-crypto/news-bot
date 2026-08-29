@@ -27,6 +27,8 @@ class Settings:
     backfill_limit:int; dedup_hours:int; similarity_threshold:float
     min_sources_high_conf:int; max_post_length:int; retention_days:int; log_level:str
     min_priority_publish:int; min_confidence_publish:float
+    event_resolver_hours:int; event_resolver_max_candidates:int; event_resolver_similarity_floor:float
+    event_resolver_confidence:float; event_resolver_min_interval_seconds:float
     @property
     def db_path(self): return ROOT / self.db_file
     @property
@@ -46,7 +48,12 @@ def load_settings():
         llm_timeout=env_int('LLM_TIMEOUT',90), llm_min_interval_seconds=env_float('LLM_MIN_INTERVAL_SECONDS',2.0), groq_cooldown_seconds=env_float('GROQ_COOLDOWN_SECONDS',30.0), db_file=env('DB_FILE','runtime/news.db'), source_config=env('SOURCE_CONFIG','sources.json'),
         auto_publish=env('AUTO_PUBLISH','0')=='1', backfill_limit=env_int('BACKFILL_LIMIT',100), dedup_hours=env_int('DEDUP_HOURS',36), similarity_threshold=env_float('SIMILARITY_THRESHOLD',.86),
         min_sources_high_conf=env_int('MIN_SOURCES_FOR_HIGH_CONFIDENCE',2), max_post_length=env_int('MAX_POST_LENGTH',3500), retention_days=env_int('RETENTION_DAYS',4), log_level=env('LOG_LEVEL','INFO'),
-        min_priority_publish=env_int('MIN_PRIORITY_PUBLISH',70), min_confidence_publish=env_float('MIN_CONFIDENCE_PUBLISH',.82)
+        min_priority_publish=env_int('MIN_PRIORITY_PUBLISH',70), min_confidence_publish=env_float('MIN_CONFIDENCE_PUBLISH',.82),
+        event_resolver_hours=env_int('EVENT_RESOLVER_HOURS',3),
+        event_resolver_max_candidates=env_int('EVENT_RESOLVER_MAX_CANDIDATES',6),
+        event_resolver_similarity_floor=env_float('EVENT_RESOLVER_SIMILARITY_FLOOR',0.20),
+        event_resolver_confidence=env_float('EVENT_RESOLVER_CONFIDENCE',0.78),
+        event_resolver_min_interval_seconds=env_float('EVENT_RESOLVER_MIN_INTERVAL_SECONDS',4.0),
     )
 
 def load_sources(path):
