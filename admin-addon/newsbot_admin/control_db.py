@@ -1,5 +1,6 @@
 import json
 import sqlite3
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -11,9 +12,21 @@ class ControlDB:
         self.init()
 
     def conn(self):
-        c=sqlite3.connect(self.path, timeout=30)
-        c.row_factory=sqlite3.Row
-        return c
+        # Both services share the same WAL database.  Opening the DB can race
+        # with SQLite/WAL initialization during simultaneous service restarts.
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        last=None
+        for attempt in range(5):
+            try:
+                c=sqlite3.connect(self.path, timeout=30)
+                c.row_factory=sqlite3.Row
+                return c
+            except sqlite3.OperationalError as exc:
+                last=exc
+                if attempt >= 4:
+                    raise
+                time.sleep(0.25*(attempt+1))
+        raise last
 
     def init(self):
         with self.conn() as c:
@@ -110,8 +123,9 @@ class ControlDB:
             events=c.execute("SELECT COUNT(*) n FROM events WHERE created_at>=?",(since,)).fetchone()['n']
             rejected=c.execute("SELECT COUNT(*) n FROM events WHERE created_at>=? AND status='rejected'",(since,)).fetchone()['n']
             published=c.execute("SELECT COUNT(*) n FROM events WHERE published_at>=? AND status='published'",(since,)).fetchone()['n']
-            duplicates=c.execute("SELECT COUNT(*) n FROM event_messages em JOIN events e ON e.id=em.event_id WHERE e.created_at>=?",(since,)).fetchone()['n']
+            duplicates=c.execute("""SELECT COUNT(*) n FROM event_messages em JOIN events e ON e.id=em.event_id WHERE e.created_at>=?""",(since,)).fetchone()['n']
             return dict(received=received,events=events,rejected=rejected,published=published,linked_messages=duplicates)
+
 
     def source_stat(self, u, hours=24):
         since=(datetime.now(timezone.utc)-timedelta(hours=hours)).isoformat()

@@ -3,6 +3,7 @@ import json
 import logging
 from datetime import datetime, timezone, timedelta
 from telethon import TelegramClient, events
+from telethon.errors import FloodWaitError
 
 # Reuse the existing News Bot modules without editing them.
 from newsbot.config import load_settings as load_news_settings
@@ -24,6 +25,7 @@ class HotWorker:
             max_work_dir=str(s.max_dir), max_session=s.max_session, max_phone=s.max_phone, max_channel_id=s.max_channel_id
         ))())
         self.entities={}; self.sources={}; self.watermarks={}; self.handler=None
+        self._flood_until={}; self._poll_cursor=0; self._poll_cycles=0; self._poll_errors=0
 
     async def start(self):
         if not self.ns.tg_api_id or not self.ns.tg_api_hash: raise RuntimeError('TG_API_ID/TG_API_HASH are required')
@@ -40,7 +42,11 @@ class HotWorker:
         entity=await self.tg.get_entity(u); return entity,getattr(entity,'id',None)
 
     async def sync_sources(self,force=False):
-        rows=self.control.hot_sources(); wanted={r['username']:r for r in rows}
+        # Primary sources are polled by the main collector.  The addon worker
+        # owns only dynamically added addon sources; this prevents duplicate
+        # Telegram history requests and duplicate LLM work.
+        rows=[r for r in self.control.hot_sources() if r['owner']=='addon']
+        wanted={r['username']:r for r in rows}
         add=[u for u in wanted if u not in self.sources]
         remove=[u for u in self.sources if u not in wanted]
         for u in remove:
@@ -74,13 +80,38 @@ class HotWorker:
     async def poll(self):
         while True:
             try:
-                for u,meta in list(self.sources.items()):
-                    latest=await self.tg.get_messages(meta['entity_id'],limit=3)
-                    for m in reversed(list(latest or [])):
-                        if not m.id or m.id<=self.watermarks.get(u,0): continue
-                        self.watermarks[u]=m.id; await self.process(m,meta['row'])
-            except asyncio.CancelledError: raise
-            except Exception: log.exception('hot poll failed')
+                items=list(self.sources.items())
+                if not items:
+                    await asyncio.sleep(self.s.hot_poll_seconds)
+                    continue
+                n=len(items)
+                ordered=[items[(self._poll_cursor+i)%n] for i in range(n)]
+                self._poll_cursor=(self._poll_cursor+1)%n
+                self._poll_cycles += 1
+                now=asyncio.get_running_loop().time()
+                for u,meta in ordered:
+                    if now < self._flood_until.get(u,0):
+                        continue
+                    try:
+                        latest=await self.tg.get_messages(meta['entity_id'],limit=20)
+                        for m in reversed(list(latest or [])):
+                            if not m.id or m.id<=self.watermarks.get(u,0): continue
+                            self.watermarks[u]=m.id
+                            await self.process(m,meta['row'])
+                    except FloodWaitError as exc:
+                        wait=max(1,int(exc.seconds))
+                        self._flood_until[u]=asyncio.get_running_loop().time()+wait+1
+                        log.warning('Hot poll flood_wait source=%s seconds=%s',u,wait)
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:
+                        self._poll_errors += 1
+                        log.exception('hot poll failed source=%s',u)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self._poll_errors += 1
+                log.exception('hot poll cycle failed')
             await asyncio.sleep(self.s.hot_poll_seconds)
 
     async def on_new(self,event):
