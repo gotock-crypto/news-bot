@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {"username":"rian_ru","enabled":true,"priority":10,"category":"auto","reliability":0.95},
+    {"username":"rt_russian","enabled":true,"priority":9,"category":"auto","reliability":0.92},
+    {"username":"readovkanews","enabled":true,"priority":9,"category":"auto","reliability":0.88},
+    {"username":"mash","enabled":true,"priority":9,"category":"auto","reliability":0.86},
+    {"username":"bazabazon","enabled":true,"priority":8,"category":"auto","reliability":0.84},
+    {"username":"ostorozhno_novosti","enabled":true,"priority":8,"category":"auto","reliability":0.85},
+    {"username":"shot_shot","enabled":true,"priority":8,"category":"auto","reliability":0.84},
+    {"username":"breakingmash","enabled":true,"priority":8,"category":"auto","reliability":0.82},
+    {"username":"rybar","enabled":true,"priority":10,"category":"svo","reliability":0.88},
+    {"username":"wargonzo","enabled":true,"priority":9,"category":"svo","reliability":0.82},
+    {"username":"meduzalive","enabled":true,"priority":6,"category":"world","reliability":0.80},
+    {"username":"infomoscow24","enabled":true,"priority":7,"category":"russia","reliability":0.84}
+  ]
+}
