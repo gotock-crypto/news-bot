@@ -1,0 +1,13 @@
+[Unit]
+Description=News Bot v2
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+WorkingDirectory=/opt/news-bot-v2
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/news-bot-v2/.venv/bin/python /opt/news-bot-v2/main.py
+Restart=always
+RestartSec=5
+[Install]
+WantedBy=multi-user.target
