@@ -1,0 +1,21 @@
+.env
+.env.*
+!.env.example
+
+.venv/
+__pycache__/
+*/__pycache__/
+*.pyc
+*.pyo
+
+runtime/
+*.log
+
+*.bak
+*.bak-*
+*.bak.*
+*.backup
+*.backup-*
+*.backup.*
+
+# Archives are added explicitly as release snapshots
