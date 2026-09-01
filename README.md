@@ -1,35 +1,48 @@
-# News Bot v2
+# News Bot
 
-Telegram polling (5 min) → one SQLite → dedup/event/upgrade → LLM → MAX, with the Admin Bot inside the same process.
+AI-powered news monitoring and cross-platform publishing pipeline.
 
-- Only polling; no LIVE listener, no polling safety-net.
-- Dedup window: 6 hours.
-- Duplicate never goes to MAX.
-- Upgrade is a new MAX publication linked to the same event and, when possible, sent as a reply to the previous MAX post.
-- One main SQLite database for pipeline and administration.
-- Admin Bot manages sources and shows status/statistics.
-- First poll of a newly added source sets a watermark and does not replay history.
-- `.env` and `runtime/` are deliberately excluded from deployment sync so existing Telegram/MAX sessions and environment stay untouched.
+Система автоматически получает новые публикации из Telegram-источников, анализирует их с помощью LLM, определяет категорию, приоритет и отношение к уже известным событиям, после чего публикует подходящие материалы в MAX.
 
-## Telegram publication destinations
+Проект работает в production на Linux/VPS и рассчитан на непрерывную работу без ручного вмешательства.
 
-The existing Admin Bot can also publish the same final NEW/UPGRADE articles that go to MAX.
-No new Telegram user session is created: the existing `ADMIN_BOT_TOKEN` is reused for Bot API delivery.
+---
 
-### Group / forum topic setup
+## Что делает система
 
-1. Add the Admin Bot to the group and make it an administrator.
-2. In the group send `/setup`.
-3. Open the required forum topic and send `/select` inside that topic.
-4. The bot confirms the selected destination. Only a Telegram administrator of that group can configure it.
+Основной pipeline:
 
-For a normal group without Topics, `/setup` connects the group itself.
-
-### Channel setup
-
-Add the Admin Bot as a channel administrator with permission to post, then message the bot privately:
-
-`/setup @channel_username`
-
-The global Admin Bot panel shows Telegram destinations and delivery statistics only to `ADMIN_IDS`.
-Chat/channel administrators do not receive the global statistics or source-management panel.
+```text
+Telegram channels
+       │
+       ▼
+Telegram Collector
+       │
+       ├── LIVE updates
+       └── polling safety-net
+       │
+       ▼
+SQLite
+       │
+       ▼
+LLM analysis
+       │
+       ├── category
+       ├── priority
+       ├── confidence
+       └── publish decision
+       │
+       ▼
+Event Resolver
+       │
+       ├── NEW
+       ├── DUPLICATE
+       └── UPDATE
+       │
+       ▼
+Editorial decision
+       │
+       ▼
+MAX Publisher
+       │
+       └── MAX channel
