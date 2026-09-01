@@ -23,6 +23,8 @@ class Settings:
     event_resolver_hours:float; event_resolver_max_candidates:int; event_resolver_similarity_floor:float; event_resolver_confidence:float; event_resolver_min_interval_seconds:float; event_resolver_scan_limit:int; event_resolver_fallback_similarity:float
     max_post_length:int; retention_days:int; log_level:str; min_priority_publish:int; min_confidence_publish:float
     admin_bot_token:str; admin_ids:tuple[int,...]; admin_poll_seconds:int
+    threads_enabled:bool; threads_dry_run:bool; threads_access_token:str
+    threads_api_base_url:str; threads_max_length:int
     @property
     def db_path(self): return ROOT/self.db_file
     @property
@@ -47,7 +49,12 @@ def load_settings():
         env('DB_FILE','runtime/news.db'),env('SOURCE_CONFIG','sources.json'),env('AUTO_PUBLISH','0')=='1',max(60,env_int('POLL_INTERVAL',300)),max(1,env_int('DEDUP_HOURS',24)),env_float('SIMILARITY_THRESHOLD',.86),
         max(1.0, env_float('EVENT_RESOLVER_HOURS', 24)),max(1, env_int('EVENT_RESOLVER_MAX_CANDIDATES', 40)),max(0.0, env_float('EVENT_RESOLVER_SIMILARITY_FLOOR', .10)),max(0.0, min(1.0, env_float('EVENT_RESOLVER_CONFIDENCE', .78))),max(0.5, env_float('EVENT_RESOLVER_MIN_INTERVAL_SECONDS', 4.0)),max(40, env_int('EVENT_RESOLVER_SCAN_LIMIT', 200)),max(.80, min(1.0, env_float('EVENT_RESOLVER_FALLBACK_SIMILARITY', .94))),
         env_int('MAX_POST_LENGTH',800),env_int('RETENTION_DAYS',7),env('LOG_LEVEL','INFO'),env_int('MIN_PRIORITY_PUBLISH',0),env_float('MIN_CONFIDENCE_PUBLISH',.82),
-        env('ADMIN_BOT_TOKEN'),tuple(ids),max(1,env_int('ADMIN_BOT_POLL_SECONDS',5)))
+        env('ADMIN_BOT_TOKEN'),tuple(ids),max(1,env_int('ADMIN_BOT_POLL_SECONDS',5)),
+        env('THREADS_ENABLED','0')=='1',
+        env('THREADS_DRY_RUN','1')=='1',
+        env('THREADS_ACCESS_TOKEN'),
+        env('THREADS_API_BASE_URL','https://graph.threads.net'),
+        max(100,min(500,env_int('THREADS_MAX_LENGTH',480))))
 def load_sources(path):
     p=Path(path)
     if not p.exists(): return []

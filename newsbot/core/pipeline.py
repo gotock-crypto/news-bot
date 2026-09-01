@@ -6,12 +6,21 @@ log = logging.getLogger("pipeline")
 
 
 class Pipeline:
-    def __init__(self, s, db, llm, max_client, telegram_publisher=None):
+    def __init__(
+        self,
+        s,
+        db,
+        llm,
+        max_client,
+        telegram_publisher=None,
+        threads_publisher=None,
+    ):
         self.s = s
         self.db = db
         self.llm = llm
         self.max = max_client
         self.telegram = telegram_publisher
+        self.threads = threads_publisher
         self.resolver = EventResolver(s, db)
 
     def payload(self, r):
@@ -321,6 +330,15 @@ class Pipeline:
                 data.get("text", ""),
             )
 
+        if self.threads:
+            await self.threads.publish_article(
+                eid,
+                aid,
+                "UPGRADE",
+                data.get("title", ""),
+                data.get("text", ""),
+            )
+
         log.info(
             "UPGRADE event=%s max=%s reply_to=%s",
             eid,
@@ -353,6 +371,15 @@ class Pipeline:
 
         if self.telegram:
             await self.telegram.publish_article(
+                eid,
+                aid,
+                "NEW",
+                data.get("title", ""),
+                data.get("text", ""),
+            )
+
+        if self.threads:
+            await self.threads.publish_article(
                 eid,
                 aid,
                 "NEW",

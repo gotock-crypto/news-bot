@@ -264,6 +264,86 @@ class AdminBot:
             return self.stats(cid)
         if text.startswith("/status"):
             return self.status(cid)
+        # Dynamic source management.
+        # Changes are written directly to DB and picked up by the
+        # collector on the next polling cycle. No service restart needed.
+
+        if text.startswith("/add_source"):
+            parts = text.split(maxsplit=1)
+            if len(parts) != 2:
+                return self.send(cid, "Использование: /add_source @channel")
+
+            u = parts[1].strip().split()[0].lstrip("@").lower()
+
+            if not u or not u.replace("_", "").isalnum():
+                return self.send(cid, "Некорректный username.")
+
+            self.db.upsert_source(u)
+            return self.send(
+                cid,
+                f"@{u} добавлен/включён. "
+                "История не реплеится: первый poll установит watermark.",
+                self.source_menu(),
+            )
+
+        if text.startswith("/enable_source"):
+            parts = text.split(maxsplit=1)
+            if len(parts) != 2:
+                return self.send(cid, "Использование: /enable_source @channel")
+
+            u = parts[1].strip().split()[0].lstrip("@").lower()
+            r = self.db.get_source(u)
+
+            if not r:
+                return self.send(cid, f"Источник @{u} не найден.")
+
+            self.db.set_source(u, True)
+
+            return self.send(
+                cid,
+                f"@{u} включён. "
+                "Следующий poll продолжит с текущего watermark.",
+                self.source_menu(),
+            )
+
+        if text.startswith("/disable_source"):
+            parts = text.split(maxsplit=1)
+            if len(parts) != 2:
+                return self.send(cid, "Использование: /disable_source @channel")
+
+            u = parts[1].strip().split()[0].lstrip("@").lower()
+            r = self.db.get_source(u)
+
+            if not r:
+                return self.send(cid, f"Источник @{u} не найден.")
+
+            self.db.set_source(u, False)
+
+            return self.send(
+                cid,
+                f"@{u} выключен. Watermark сохранён.",
+                self.source_menu(),
+            )
+
+        if text.startswith("/delete_source"):
+            parts = text.split(maxsplit=1)
+            if len(parts) != 2:
+                return self.send(cid, "Использование: /delete_source @channel")
+
+            u = parts[1].strip().split()[0].lstrip("@").lower()
+            r = self.db.get_source(u)
+
+            if not r:
+                return self.send(cid, f"Источник @{u} не найден.")
+
+            self.db.delete_source(u)
+
+            return self.send(
+                cid,
+                f"@{u} удалён.",
+                self.source_menu(),
+            )
+
         if text.startswith("/sources"):
             return self.send(cid, "📰 Источники", self.source_menu())
         if text.startswith("/telegram"):

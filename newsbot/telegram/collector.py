@@ -495,6 +495,53 @@ class TelegramCollector:
             source["last_message_id"] or 0
         )
 
+        # НОВЫЙ ИСТОЧНИК:
+        # При первом poll НЕ забираем историю.
+        # Берём только самое последнее сообщение,
+        # ставим его ID как начальный watermark
+        # и НЕ отправляем его в pipeline.
+        #
+        # Поэтому после добавления источника:
+        #
+        #   poll #1 -> latest message -> watermark
+        #   poll #2 -> только сообщения после watermark
+        #
+        # Если канал пока пустой/сообщений нет, watermark
+        # останется 0 и следующая попытка повторит инициализацию.
+        if watermark == 0:
+            latest = None
+
+            async for msg in self.client.iter_messages(
+                entity,
+                limit=1,
+            ):
+                latest = msg
+                break
+
+            if latest and getattr(latest, "id", None):
+                latest_id = int(latest.id)
+
+                self.db.update_watermark(
+                    username,
+                    latest_id,
+                )
+
+                log.info(
+                    "poll source=%s initialized watermark=%s "
+                    "(latest message skipped)",
+                    username,
+                    latest_id,
+                )
+
+            else:
+                log.info(
+                    "poll source=%s has no messages; "
+                    "watermark remains 0",
+                    username,
+                )
+
+            return
+
         new_count = 0
         max_id = watermark
 
