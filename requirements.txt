@@ -1,0 +1,5 @@
+maxapi-python==2.4.1
+Telethon==1.44.0
+python-dotenv>=1.0.1
+requests>=2.31.0
+groq>=1.7.0
